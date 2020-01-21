@@ -6,6 +6,7 @@ database version and possibly perform database upgrades.
 import io
 import sqlite3
 import sys
+from contextlib import contextmanager
 from os.path import expanduser, normpath
 from typing import Union, Tuple, Optional
 
@@ -255,6 +256,23 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database(journal_mode)
+
+    
+@contextmanager
+def open_db_and_restore_db_location(db_file_with_abs_path: str) -> None:
+    """Initializes or creates a database and restores the 'db_location' afterwards.
+    
+    Args:
+        db_file_with_abs_path
+            Database file name with absolute path, for example
+            ``C:\\mydata\\majorana_experiments.db``
+    """
+    db_location = qc.config["core"]["db_location"]
+    try:
+        qc.initialise_or_create_database_at(db_file_with_abs_path)
+        yield
+    finally:
+        qc.config["core"]["db_location"] = db_location
 
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
